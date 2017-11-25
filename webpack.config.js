@@ -13,8 +13,13 @@ module.exports = {
         exclude: /node_modules/,
         loader: 'babel-loader',
         options: {
-          presets: ['env']
+          presets: ['env'],
+          plugins: ['transform-class-properties']
         }
+      },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
       }
     ]
   }
