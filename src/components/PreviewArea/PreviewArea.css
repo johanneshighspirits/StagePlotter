@@ -1,5 +1,7 @@
 .previewArea {
-    position: relative;
-    height: 100%;
-    background: #555;
-}
+  position: relative; }
+
+.previewArea svg {
+  position: absolute;
+  top: 0;
+  left: 0; }

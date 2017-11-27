@@ -2,6 +2,9 @@ import React, { Component } from 'react'
 import Monitor from '../Monitor'
 import PreviewArea from '../PreviewArea'
 import DragItem from '../DragItem'
+import GridTile from '../GridTile'
+import utils from '../../utils'
+import * as constants from '../../constants'
 import './Canvas.css'
 
 class Canvas extends Component {
@@ -11,20 +14,47 @@ class Canvas extends Component {
       x: 0,
       y: 0,
       activeItem: null,
-      layers: []
+      activeTile: -1,
+      layers: [],
+      gridTiles: this.gridTiles()
     }
+  }
+
+  /**
+   * Setup grid
+   */
+  gridTiles = () => {
+    let xIndex = 0
+    let yIndex = 0
+    let gridTiles = []
+    while (yIndex < constants.TILES_IN_Y) {
+      while (xIndex < constants.TILES_IN_X) {
+        let i = gridTiles.length
+        gridTiles.push(
+          <GridTile key={i} isActive={false} xIndex={xIndex} yIndex={yIndex} />
+        )
+        xIndex++
+      }
+      yIndex++
+      xIndex = 0
+    }
+    return gridTiles
   }
 
   handleMouseMove = (e) => {
     let rect = this.refs.stage.getBoundingClientRect()
+    let x = Math.round(e.clientX - rect.left)
+    let y = Math.round(e.clientY - rect.top)
     this.setState({
-      x: Math.round(e.clientX - rect.left),
-      y: Math.round(e.clientY - rect.top),
+      // x, y,
+      activeTile: utils.tileFor(x, y)
     })
   }
 
   handleDragStart = (e) => {
     e.dataTransfer.setData('itemType', e.target.dataset.identifier)
+    let img = e.currentTarget
+    e.dataTransfer.setDragImage(img.firstChild, 50, 12.5)
     e.dataTransfer.effectAllowed = 'copy'
     let item = {
       identifier: e.target.dataset.identifier,
@@ -39,18 +69,18 @@ class Canvas extends Component {
   }
 
   handleDragEnd = (e) => {
-    console.log('end', e)
     this.setState(prevState => {
       let activeItem = prevState.activeItem
+      activeItem.gridTile = prevState.activeTile
       activeItem.x = prevState.x
       activeItem.y = prevState.y
       return {
         layers: prevState.layers.concat(activeItem),
-        activeItem: null
+        activeItem: null,
+        activeTile: -1
       }
     })
   }
-
 
   handleDragEnter = (e) => {
     e.preventDefault()
@@ -60,11 +90,23 @@ class Canvas extends Component {
   handleDragOver = (e) => {
     e.preventDefault()
     let rect = this.refs.stage.getBoundingClientRect()
+    let x = Math.round(e.clientX - rect.left)
+    let y = Math.round(e.clientY - rect.top)
+    let tile = utils.tileFor(x, y)
+    if (this.state.tile !== tile) {
+      this.setState({
+        x, y,
+        activeTile: tile
+      })
+    }
+  }
+
+  handleMouseLeave = (e) => {
+    e.preventDefault()
     this.setState({
-      x: Math.round(e.clientX - rect.left),
-      y: Math.round(e.clientY - rect.top),
+      activeTile: -1
     })
-    // console.log('over', e)
+    console.log('left', e)
   }
 
   handleDrop = (e) => {
@@ -77,20 +119,21 @@ class Canvas extends Component {
   render() {
     return (
       <div>
-        <div id="dev" style={{ position: 'fixed', top: 0, left: '50%', padding: '0.5em 1em', backgroundColor: '#222', color: '#eee' }}>
+        {/* <div id="dev" style={{ position: 'fixed', top: 0, left: '50%', padding: '0.5em 1em', backgroundColor: '#222', color: '#eee' }}>
           X: {this.state.x}, Y: {this.state.y}<br />
+          Tile: {this.tileFor(this.state.x, this.state.y)}<br />
           {this.state.layers.length} items to draw
-        </div>
+        </div> */}
 
         <nav>
           <ul>
             <li>
-              <DragItem 
+              <DragItem
                 identifier='monitor'
                 handleDragStart={this.handleDragStart}
                 handleDragEnd={this.handleDragEnd}
-                width='200'
-                height='100'
+                width='100'
+                height='25'
                 text='[ O ]'>
                 <Monitor />
               </DragItem>
@@ -100,16 +143,21 @@ class Canvas extends Component {
 
         <div
           ref='stage'
-          style={{ width: '600px', height: '400px', border: '3px solid black'}}
+          style={{
+            width: `${constants.GRID_WIDTH}px`,
+            height: `${constants.GRID_HEIGHT}px`
+          }}
           onMouseMove={this.handleMouseMove}
+          onMouseLeave={this.handleMouseLeave}
           onDragEnter={this.handleDragEnter}
           onDragOver={this.handleDragOver}
           onDrop={this.handleDrop} >
 
-          {/* <canvas width='800' height='600'></canvas> */}
           <PreviewArea
-            width='600'
-            height='400'
+            width={constants.GRID_WIDTH}
+            height={constants.GRID_HEIGHT}
+            gridTiles={this.state.gridTiles}
+            activeTile={this.state.activeTile}
             layers={this.state.layers} />
 
         </div>
