@@ -6,6 +6,7 @@ import GridTile from '../GridTile'
 import utils from '../../utils'
 import * as constants from '../../constants'
 import './Canvas.css'
+import { TILE_WIDTH, TILE_HEIGHT } from '../../constants'
 
 class Canvas extends Component {
   constructor(props) {
@@ -132,8 +133,8 @@ class Canvas extends Component {
                 identifier='monitor'
                 handleDragStart={this.handleDragStart}
                 handleDragEnd={this.handleDragEnd}
-                width='100'
-                height='25'
+                width={TILE_WIDTH}
+                height={TILE_HEIGHT}
                 text='[ O ]'>
                 <Monitor />
               </DragItem>

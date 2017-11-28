@@ -1,6 +1,9 @@
 
 # Created by https://www.gitignore.io/api/node
 
+# Vscode
+.vscode/
+
 ### Node ###
 # Logs
 logs
@@ -61,5 +64,7 @@ typings/
 # dotenv environment variables file
 .env
 
+# Deploy
+dist/
 
 # End of https://www.gitignore.io/api/node
