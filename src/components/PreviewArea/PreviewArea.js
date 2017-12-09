@@ -8,7 +8,7 @@ class PreviewArea extends Component {
   shapeFor = (item, i) => {
     switch (item.identifier) {
     case 'monitor':
-      return <Monitor key={i} gridTile={item.gridTile} x={item.x} y={item.y} />
+      return <Monitor key={i} gridTile={item.gridTile} perspAngle={this.props.perspAngle} x={item.x} y={item.y} />
     default:
       throw new Error(item.identifier + ' is not defined as a shape')
     }

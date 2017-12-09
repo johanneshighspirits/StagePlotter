@@ -5,7 +5,7 @@ import Canvas from './components/Canvas'
 const App = () => {
   return (
     <div>
-      <h1>StagePlotter</h1>
+      <h1>StagePlotter 1.0</h1>
       <Canvas />
     </div>
   )

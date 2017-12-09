@@ -6,7 +6,7 @@ import GridTile from '../GridTile'
 import utils from '../../utils'
 import * as constants from '../../constants'
 import './Canvas.css'
-import { TILE_WIDTH, TILE_HEIGHT } from '../../constants'
+import { TILE_WIDTH, TILE_HEIGHT, PERSP_ANGLE } from '../../constants'
 
 class Canvas extends Component {
   constructor(props) {
@@ -17,7 +17,8 @@ class Canvas extends Component {
       activeItem: null,
       activeTile: -1,
       layers: [],
-      gridTiles: this.gridTiles()
+      gridTiles: this.gridTiles(),
+      perspAngle: PERSP_ANGLE
     }
   }
 
@@ -126,6 +127,12 @@ class Canvas extends Component {
           {this.state.layers.length} items to draw
         </div> */}
 
+        <button onClick={() => this.setState({ perspAngle: 0 })}>0</button>
+        <button onClick={() => this.setState({ perspAngle: 10 })}>10</button>
+        <button onClick={() => this.setState({ perspAngle: 26.565 })}>ISO</button>
+        <button onClick={() => this.setState({ perspAngle: 45 })}>45</button>
+        <button onClick={() => this.setState({ perspAngle: 60 })}>60</button>
+        <button onClick={() => this.setState({ perspAngle: 90 })}>90</button>
         <nav>
           <ul>
             <li>
@@ -133,8 +140,8 @@ class Canvas extends Component {
                 identifier='monitor'
                 handleDragStart={this.handleDragStart}
                 handleDragEnd={this.handleDragEnd}
-                width={TILE_WIDTH}
-                height={TILE_HEIGHT}
+                width={100}
+                height={50}
                 text='[ O ]'>
                 <Monitor />
               </DragItem>
@@ -159,6 +166,7 @@ class Canvas extends Component {
             height={constants.GRID_HEIGHT}
             gridTiles={this.state.gridTiles}
             activeTile={this.state.activeTile}
+            perspAngle={this.state.perspAngle}
             layers={this.state.layers} />
 
         </div>
