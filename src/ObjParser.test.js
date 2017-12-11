@@ -1,4 +1,4 @@
-import ObjParser from './ObjParser'
+import ObjParser, { ObjFileListParser } from './ObjParser'
 import Point from './Point'
 
 const validCubeObjFileAsString = `# This file uses centimeters as units for non-parametric coordinates.
@@ -133,6 +133,23 @@ function validateResultIsOfCorrectType(pointGroups) {
   expect(pointGroups[0][0]).toBeInstanceOf(Point)
 }
 
+describe('Obj FileList parser', () => {
+  test('should parse list of valid files', () => {
+    // expect.assertions(1)
+    const file1 = new File([validCubeObjFileAsString], 'file1.obj', { type: 'application/octet-stream'})
+    const file2 = new File([validThreeCubesObjFileAsString], 'file2.obj', { type: 'application/octet-stream'})
+    let files = [file1, file2]
+    let objFileListParser = new ObjFileListParser(files)
+    // objFileListParser.addListener('parseStart', this.updateStatus)
+    // objFileListParser.addListener('parseProgress', this.updateStatus)
+    objFileListParser.addListener('parseComplete', () => {
+      expect(objFileListParser.objects).toHaveLength(1)
+      done()
+    })
+    objFileListParser.start()
+    expect(true).toBeFalsy()
+  })
+})
 describe('Obj File Parser', () => {
   let objParser
   beforeEach(() => {

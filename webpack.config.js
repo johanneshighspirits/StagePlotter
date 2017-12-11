@@ -6,6 +6,10 @@ module.exports = {
     filename: 'bundle.js',
     path: path.resolve(__dirname, 'dist/public/js')
   },
+  node: {
+    fs: 'empty',
+    readline: 'empty'
+  },
   devtool: 'cheap-eval-source-map',
   module: {
     rules: [

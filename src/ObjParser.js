@@ -2,20 +2,104 @@ import fs from 'fs'
 import readline from 'readline'
 import path from 'path'
 import Point from './Point'
+import { Writable, Readable } from 'stream'
+import { EventEmitter } from 'events'
 
-class Objparser {
+export class ObjFileListParser extends EventEmitter {
+  /**
+   * Parses file(s) loaded from html form input (user
+   * uploaded files)
+   */
+  constructor(fileList) {
+    super(fileList)
+    this.fileList = fileList
+    this.objects = []
+  }
+
+  start = () => {
+    Array.prototype.forEach.call(this.fileList, (file, index) => {
+      this.objects[index] = {
+        fileName: file.name.replace('.obj', ''),
+        value: '0%'
+      }
+      this.emit(
+        'parseStart', 
+        index,
+        this.objects[index].fileName,
+        this.objects[index].value
+      )
+      let objParser = new ObjParser()
+      let chunkSize = 100
+      let startPos = 0
+      let endPos = chunkSize
+      let fileStream = new Readable({
+        read() {
+          if (startPos <= file.size) fileReader.readAsArrayBuffer(file.slice(startPos, endPos))        
+        }
+      })
+      let fileReader = new FileReader()
+      let progress = 0
+      fileReader.onprogress = (e) => {
+        if (e.lengthComputable) {
+          progress += e.loaded
+          this.emit(
+            'parseProgress', 
+            index,
+            this.objects[index].fileName, 
+            `${Math.round(Math.min(progress, file.size) / file.size * 100)}%`
+          )
+        }
+      }
+      fileReader.onload = (e) => {
+        let chunk = new Uint8Array(fileReader.result)
+        console.log(chunk)
+        startPos += chunkSize
+        endPos += chunkSize
+        fileStream.push(chunk)
+        if (startPos >= file.size) {
+          fileStream.push(null)
+          this.emit(
+            'parseComplete', 
+            index,
+            this.objects[index].fileName,
+            '100%'
+          )
+        }  
+      }
+      fileReader.readAsArrayBuffer(file.slice(startPos, endPos))
+      objParser.parseStream(fileStream)
+    })
+  }
+}
+
+class ObjParser {
   constructor() {
     this.objects = []
     this.currObject = []
     this.typeRegex = /^[vg]\s/i
+    this.spacesRegex = /\s/gi
+  }
+
+  reset = () => {
+    this.objects = []
+    this.currObject = []
+  }
+
+  parseStream = (fileStream) => {
+    let outStream = new Writable({
+      write(chunk, encoding, callback) {
+        console.error(chunk.toString())
+        callback()
+      }
+    })
+
+    fileStream.pipe(outStream)
   }
 
   parseFile = (filePath) => {
     return new Promise(resolve => {
       // Reset parser
-      this.objects = []
-      this.currObject = []
-
+      this.reset()
       let fileStream = fs.createReadStream(path.join(__dirname, filePath))
       let lineReader = readline.createInterface(fileStream)
       lineReader.on('line', line => {
@@ -30,7 +114,7 @@ class Objparser {
   }
 
   parseLine = (line) => {
-    let values = line.split(/\s/gi)
+    let values = line.split(this.spacesRegex)
     switch (values[0]) {
       case 'g':
         // This is a group
@@ -60,34 +144,16 @@ class Objparser {
    */
   parseString = (string) => {
     if (!string) throw new Error('No string supplied')
-    let objects = []
+    // Reset parser
+    this.reset()
     let rows = string.split(/\n/gi)
-    // Loop through rows
-    let lastObject = rows.reduce((acc, row) => {
-      let values = row.split(/\s/gi)
-      switch (values[0]) {
-        case 'g':
-          // This is a group
-          // Store any parsed point groups
-          if (acc.length > 0) objects.push(acc)
-          // Init new acc array
-          acc = []
-          break
-        case 'v': {
-          // This is a vertex, store point in acc array
-          // Remove first value (`v`)
-          values.shift()
-          // If this is first point, cmd should be `M` otherwise `L`
-          let cmd = acc.length === 0 ? 'M' : 'L'
-          let point = new Point(cmd, ...values.map(value => parseFloat(value, 10)))
-          acc.push(point)
-        }
+    rows.forEach(line => {
+      if (this.typeRegex.test(line)) {
+        this.parseLine(line)
       }
-      return acc
-    }, [])
-    if (lastObject.length > 0) objects.push(lastObject)
-    return objects
+    })
+    return this.objects
   }
 }
 
-export default Objparser
+export default ObjParser
