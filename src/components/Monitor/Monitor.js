@@ -10,7 +10,7 @@ const Monitor = ({ gridTile, perspAngle }) => {
   coords.y = coords.y + (TILE_HEIGHT / 2)
 
   let bottomSquare = [
-    new Point('M', 0, 0, 0),
+    new Point('M', 0, 0, 0), 
     new Point('L', 1, 0, 0),
     new Point('L', 1, 0, 0.2),
     new Point('L', 1.2, 0, 0.2),
@@ -30,8 +30,8 @@ const Monitor = ({ gridTile, perspAngle }) => {
   let topSquare2d = utils.pointsToSVGCommands(topSquare, coords, perspAngle)
   let bottomSquare2d = utils.pointsToSVGCommands(bottomSquare, coords, perspAngle)
   
-  console.log(bottomSquare2d)
-  console.log(topSquare2d)
+  // console.log(bottomSquare2d)
+  // console.log(topSquare2d)
 
   return (
     <g className='monitor'>

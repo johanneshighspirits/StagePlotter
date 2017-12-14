@@ -17,7 +17,7 @@ Point.prototype.to2d = function(perspAngle = PERSP_ANGLE, offset = { x:0, y:0 },
     x: offset.x + (this.x * unit * oppAngleSin + (this.z * unit) * oppAngleSin),
     y: offset.y + ((-this.y * oppAngleSin) * unit + this.x * unit * perspAngleSin - this.z * unit * perspAngleSin)
   }
-  console.log(this, 'becomes', twoDimPoint)
+  // console.log(this, 'becomes', twoDimPoint)
   return twoDimPoint
 }
 

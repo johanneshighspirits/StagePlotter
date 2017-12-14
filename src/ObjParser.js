@@ -52,7 +52,7 @@ export class ObjFileListParser extends EventEmitter {
       }
       fileReader.onload = (e) => {
         let chunk = new Uint8Array(fileReader.result)
-        console.log(chunk)
+        // console.log(chunk)
         startPos += chunkSize
         endPos += chunkSize
         fileStream.push(chunk)
@@ -62,7 +62,9 @@ export class ObjFileListParser extends EventEmitter {
             'parseComplete', 
             index,
             this.objects[index].fileName,
-            '100%'
+            '100%',
+//            this.objects[index],
+            objParser.objects
           )
         }  
       }
@@ -74,26 +76,43 @@ export class ObjFileListParser extends EventEmitter {
 
 class ObjParser {
   constructor() {
-    this.objects = []
-    this.currObject = []
     this.typeRegex = /^[vg]\s/i
     this.spacesRegex = /\s/gi
+    this.reset()
   }
 
   reset = () => {
     this.objects = []
-    this.currObject = []
+    this.currObject = {
+      name: '',
+      vertices: []
+    }
   }
 
   parseStream = (fileStream) => {
-    let outStream = new Writable({
-      write(chunk, encoding, callback) {
-        console.error(chunk.toString())
-        callback()
-      }
+    return new Promise((resolve, reject) => {
+      let outStream = new Writable({
+        write(chunk, encoding, callback) {
+          let lines = chunk.toString().split('\n')
+          if (this.lastChunk) {
+            lines[0] = this.lastChunk + lines[0]
+          }
+          this.lastChunk = lines.pop()
+          lines.forEach(line => {
+            this.parseLine(line)
+          })
+          callback()
+        }
+      })
+      outStream.typeRegex = this.typeRegex
+      outStream.parseLine = this.parseLine
+      outStream.on('finish', (chunk, a, b) => {
+        console.log(this.objects)
+        resolve(this.objects)
+      })
+  
+      fileStream.pipe(outStream)
     })
-
-    fileStream.pipe(outStream)
   }
 
   parseFile = (filePath) => {
@@ -119,18 +138,24 @@ class ObjParser {
       case 'g':
         // This is a group
         // Store any parsed point groups
-        if (this.currObject.length > 0) this.objects.push(this.currObject)
+        if (this.currObject.vertices.length > 0) {
+          this.currObject.name = values[1]
+          this.objects.push(this.currObject)
+        }
         // Reset this.currObject array
-        this.currObject = []
+        this.currObject = {
+          name: '',
+          vertices: []
+        }
         break
       case 'v': {
         // This is a vertex, store point in this.currObject array
         // Remove first value (`v`)
         values.shift()
         // If this is first point, cmd should be `M` otherwise `L`
-        let cmd = this.currObject.length === 0 ? 'M' : 'L'
+        let cmd = this.currObject.vertices.length === 0 ? 'M' : 'L'
         let point = new Point(cmd, ...values.map(value => parseFloat(value, 10)))
-        this.currObject.push(point)
+        this.currObject.vertices.push(point)
       }
     }
   }
