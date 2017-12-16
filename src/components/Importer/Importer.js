@@ -7,21 +7,29 @@ import './Importer.css'
 class Importer extends Component {
   state = {
     status: [],
-    objectTemplates: []
+    templateObjects: []
   }
 
   handleChange = (e) => {
     e.preventDefault()
     const files = e.target.files
+    this.parseFiles(files)
+  }
+
+  parseFiles = async (files) => {
     let objFileListParser = new ObjFileListParser(files)
     objFileListParser.addListener('parseStart', this.updateStatus)
     objFileListParser.addListener('parseProgress', this.updateStatus)
     objFileListParser.addListener('parseComplete', this.onComplete)
-    objFileListParser.start()
+    const templateObjects = await objFileListParser.start()
+    this.setState(prevState => { 
+      return {
+        templateObjects: prevState.templateObjects.concat(templateObjects[0])
+      }
+    })
   }
 
   updateStatus = (index, fileName, progress) => {
-    // console.log(index, fileName, progress)
     this.setState(prevState => {
       let status = prevState.status
       status[index] = {
@@ -34,9 +42,8 @@ class Importer extends Component {
     })
   }
 
-  onComplete = (index, fileName, progress, objectTemplates) => {
+  onComplete = (index, fileName, progress) => {
     this.updateStatus(index, fileName, progress)
-    this.setState({ objectTemplates })
   }
 
   render() {
@@ -51,15 +58,16 @@ class Importer extends Component {
           </label>
         </form>
         <ul>
-          {this.state.objectTemplates.map((template, i) => {
+          {this.state.templateObjects.map((template, i) => {
+            console.log(template)
             return (
-              <li key={i}><b>{template.name}</b> {template.vertices.length} vertices
+              <li key={i}><b>{template.name}</b> {template.vertices.length} vertices, {template.faces.length} faces
                 <DragItem
                   identifier={template.name}
                   handleDragStart={this.handleDragStart}
                   handleDragEnd={this.handleDragEnd}
-                  width={1000}
-                  height={1000}>
+                  width={100}
+                  height={100}>
                   <SvgItem item={template} />
                 </DragItem>
               </li>

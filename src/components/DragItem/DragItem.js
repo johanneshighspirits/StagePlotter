@@ -2,8 +2,8 @@ import React, { Component } from 'react'
 import './DragItem.css'
   
 const DragItem = ({ identifier, handleDragStart, handleDragEnd, width, height, children }) => {
-  let viewBox = `${width / -2} ${height / -2} ${width} ${height}`
-  viewBox = '50 -50 100 100'
+  let viewBox = `${width / 2} ${height / -2} ${width} ${height}`
+  // viewBox = '50 -50 100 100'
   return (
     <span
       data-identifier={identifier}

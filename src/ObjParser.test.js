@@ -127,29 +127,15 @@ f 23/35 24/36 18/38 17/37
 f 18/30 24/39 22/40 20/32
 f 23/41 17/29 19/31 21/42
 `
-function validateResultIsOfCorrectType(pointGroups) {
-  expect(pointGroups).toBeInstanceOf(Array)
-  expect(pointGroups[0]).toBeInstanceOf(Array)
-  expect(pointGroups[0][0]).toBeInstanceOf(Point)
+
+function validateResultIsOfCorrectType(templateObject) {
+  expect(typeof (templateObject)).toBe('object')
+  expect(templateObject.vertices).toBeInstanceOf(Array)
+  expect(templateObject.faces).toBeInstanceOf(Array)
+  expect(typeof (templateObject.name)).toBe('string')
+  expect(templateObject.vertices[0]).toBeInstanceOf(Point)
 }
 
-describe('Obj FileList parser', () => {
-  test('should parse list of valid files', () => {
-    // expect.assertions(1)
-    const file1 = new File([validCubeObjFileAsString], 'file1.obj', { type: 'application/octet-stream'})
-    const file2 = new File([validThreeCubesObjFileAsString], 'file2.obj', { type: 'application/octet-stream'})
-    let files = [file1, file2]
-    let objFileListParser = new ObjFileListParser(files)
-    // objFileListParser.addListener('parseStart', this.updateStatus)
-    // objFileListParser.addListener('parseProgress', this.updateStatus)
-    objFileListParser.addListener('parseComplete', () => {
-      expect(objFileListParser.objects).toHaveLength(1)
-      done()
-    })
-    objFileListParser.start()
-    expect(true).toBeFalsy()
-  })
-})
 describe('Obj File Parser', () => {
   let objParser
   beforeEach(() => {
@@ -161,50 +147,50 @@ describe('Obj File Parser', () => {
   })
 
   describe('from valid .obj string', () => {
-    let validCubePointGroups
-    let validThreeCubesPointGroups
+    let validCubeObjects
+    let validThreeCubesObjects
     beforeEach(() => {
-      validCubePointGroups = objParser.parseString(validCubeObjFileAsString)
-      validThreeCubesPointGroups = objParser.parseString(validThreeCubesObjFileAsString)
+      validCubeObjects = objParser.parseString(validCubeObjFileAsString)
+      validThreeCubesObjects = objParser.parseString(validThreeCubesObjFileAsString)
     })
     afterEach(() => {
-      validCubePointGroups = null
-      validThreeCubesPointGroups = null
+      validCubeObjects = null
+      validThreeCubesObjects = null
     })
-    describe('should return an array of arrays containing Points', () => {
+    describe('should return an object with vertices and faces arrays', () => {
       test('when given one cube', () => {
-        validateResultIsOfCorrectType(validCubePointGroups)
+        validateResultIsOfCorrectType(validCubeObjects[0])
       })
       test('when given three cubes', () => {
-        validateResultIsOfCorrectType(validThreeCubesPointGroups)
+        validateResultIsOfCorrectType(validThreeCubesObjects[0])
       })
     })
 
     describe('should return', () => {
       test('1 group of 8 points when given one cube', () => {
-        expect(validCubePointGroups).toHaveLength(1)
-        expect(validCubePointGroups[0]).toHaveLength(8)
+        expect(validCubeObjects).toHaveLength(1)
+        expect(validCubeObjects[0].vertices).toHaveLength(8)
       })
       test('3 groups of 8 points when given three cubes', () => {
-        expect(validThreeCubesPointGroups).toHaveLength(3)
-        validThreeCubesPointGroups.forEach(cubeGroup => {
-          expect(cubeGroup).toHaveLength(8)
+        expect(validThreeCubesObjects).toHaveLength(3)
+        validThreeCubesObjects.forEach(cubeGroup => {
+          expect(cubeGroup.vertices).toHaveLength(8)
         })
       })
     })
 
     describe('point xyz values should be of type Number', () => {
       test('when given one cube', () => {
-        let objectPoints = validCubePointGroups[0]
-        objectPoints.forEach(point => {
+        let vertices = validCubeObjects[0].vertices
+        vertices.forEach(point => {
           expect(typeof point.x).toBe('number')
           expect(typeof point.y).toBe('number')
           expect(typeof point.z).toBe('number')
         })
       })
       test('when given three cubes', () => {
-        validThreeCubesPointGroups.forEach(cubeGroup => {
-          cubeGroup.forEach(point => {
+        validThreeCubesObjects.forEach(templateObject => {
+          templateObject.vertices.forEach(point => {
             expect(typeof point.x).toBe('number')
             expect(typeof point.y).toBe('number')
             expect(typeof point.z).toBe('number')
@@ -212,25 +198,68 @@ describe('Obj File Parser', () => {
         })
       })
     })
+
+    describe('faces array should consist of arrays with four points each', () => {
+      test('when given one cube', () => {
+        // 1 cube should have zero length vertices
+        // assertions = 1
+        // 1 cube has 6 faces.
+        // assertions (1) += 6 => 7
+        // Each face has 4 vertices with 3 values each
+        // assertions (7) += 6 * 4 * 3 => 79
+        expect.assertions(79)
+        let faces = validCubeObjects[0].faces
+        expect(faces).not.toHaveLength(0)
+        faces.forEach(face => {
+          expect(face).toHaveLength(4)
+          face.forEach(facePoint => {
+            expect(typeof (facePoint.x)).toBe('number')
+            expect(typeof (facePoint.y)).toBe('number')
+            expect(typeof (facePoint.z)).toBe('number')
+          })
+        })
+      })
+      test('when given three cubes', () => {
+        // Three cubes should have zero length vertices
+        // assertions = 3
+        // 3 cubes with 6 faces each.
+        // assertions (3) += 3 * 6 => 21
+        // Each face has 4 vertices with 3 values each
+        // assertions (21) += 3 * 6 * 4 * 3 => 237
+        expect.assertions(237)
+        validThreeCubesObjects.forEach(templateObject => {
+          let faces = templateObject.faces
+          expect(faces).not.toHaveLength(0)
+          faces.forEach(face => {
+            expect(face).toHaveLength(4)
+            face.forEach(facePoint => {
+              expect(typeof (facePoint.x)).toBe('number')
+              expect(typeof (facePoint.y)).toBe('number')
+              expect(typeof (facePoint.z)).toBe('number')
+            })
+          })
+        })
+      })
+    })
     test('point cmd value should be of type String', () => {
-      let objectPoints = validCubePointGroups[0]
-      objectPoints.forEach(point => {
+      let vertices = validCubeObjects[0].vertices
+      vertices.forEach(point => {
         expect(typeof point.cmd).toBe('string')
       })
     })
   })
 
   describe('from valid external .obj file', () => {
-    describe('should return an array of arrays containing Points', () => {
+    describe('should return an object with vertices and faces arrays', () => {
       test('when given 1 cube', async () => {
-        expect.assertions(3)
+        expect.assertions(5)
         let fileContentAsString = await objParser.parseFile('validCubeFile.obj')
-        validateResultIsOfCorrectType(fileContentAsString)
+        validateResultIsOfCorrectType(fileContentAsString[0])
       })
       test('when given 3 cubes', async () => {
-        expect.assertions(3)
+        expect.assertions(5)
         let fileContentAsString = await objParser.parseFile('validThreeCubesFile.obj')
-        validateResultIsOfCorrectType(fileContentAsString)
+        validateResultIsOfCorrectType(fileContentAsString[0])
       })
     })
   })

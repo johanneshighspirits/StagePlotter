@@ -1,0 +1,6 @@
+.translucent {
+  fill: rgba(0, 0, 0, 0.1); }
+
+.wireframe {
+  stroke: #2bc3f1;
+  stroke-width: 1; }

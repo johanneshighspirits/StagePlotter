@@ -26,6 +26,19 @@ const utils = {
     })
     return commands.join(' ') + 'Z'
   },
+  facesToSVGCommands: (faces, offset = { x:0, y:0 }, perspAngle) => {
+    return faces.map(face => {
+      let isFirst = true
+      const path = face.map(point => {
+        if (point.cmd === point.cmd.toLowerCase()) throw new Error('You must provide absolute coordinates to utils.pointsToSVGCommands(). Only uppercased commands.')
+        if (point.is3d()) point = point.to2d(perspAngle)
+        let cmd = `${isFirst ? 'M' : 'L'}${offset.x + point.x} ${offset.y + point.y}`
+        isFirst = false
+        return cmd
+      })
+      return path.join(' ') + 'Z'
+    })
+  },
 
 
 }

@@ -2,7 +2,7 @@ import fs from 'fs'
 import readline from 'readline'
 import path from 'path'
 import Point from './Point'
-import { Writable, Readable } from 'stream'
+import { Writable, Readable } from 'stream'
 import { EventEmitter } from 'events'
 
 export class ObjFileListParser extends EventEmitter {
@@ -17,13 +17,14 @@ export class ObjFileListParser extends EventEmitter {
   }
 
   start = () => {
-    Array.prototype.forEach.call(this.fileList, (file, index) => {
+    // Create array of Promises for each file
+    let filesPromises = Array.prototype.map.call(this.fileList, (file, index) => {
       this.objects[index] = {
         fileName: file.name.replace('.obj', ''),
         value: '0%'
       }
       this.emit(
-        'parseStart', 
+        'parseStart',
         index,
         this.objects[index].fileName,
         this.objects[index].value
@@ -34,7 +35,7 @@ export class ObjFileListParser extends EventEmitter {
       let endPos = chunkSize
       let fileStream = new Readable({
         read() {
-          if (startPos <= file.size) fileReader.readAsArrayBuffer(file.slice(startPos, endPos))        
+          if (startPos <= file.size) fileReader.readAsArrayBuffer(file.slice(startPos, endPos))
         }
       })
       let fileReader = new FileReader()
@@ -43,14 +44,14 @@ export class ObjFileListParser extends EventEmitter {
         if (e.lengthComputable) {
           progress += e.loaded
           this.emit(
-            'parseProgress', 
+            'parseProgress',
             index,
-            this.objects[index].fileName, 
+            this.objects[index].fileName,
             `${Math.round(Math.min(progress, file.size) / file.size * 100)}%`
           )
         }
       }
-      fileReader.onload = (e) => {
+      fileReader.onload = () => {
         let chunk = new Uint8Array(fileReader.result)
         // console.log(chunk)
         startPos += chunkSize
@@ -59,37 +60,45 @@ export class ObjFileListParser extends EventEmitter {
         if (startPos >= file.size) {
           fileStream.push(null)
           this.emit(
-            'parseComplete', 
+            'parseComplete',
             index,
             this.objects[index].fileName,
             '100%',
-//            this.objects[index],
-            objParser.objects
+            // objParser.objects
           )
-        }  
+        }
       }
       fileReader.readAsArrayBuffer(file.slice(startPos, endPos))
-      objParser.parseStream(fileStream)
+      return objParser.parseStream(fileStream)
     })
+    return Promise.all(filesPromises)
   }
+
 }
 
 class ObjParser {
   constructor() {
-    this.typeRegex = /^[vg]\s/i
+    this.typeRegex = /^[vgf]\s/i
     this.spacesRegex = /\s/gi
     this.reset()
   }
 
   reset = () => {
     this.objects = []
+    this.allVertices = []
+    this.resetCurrObject()
+  }
+
+  resetCurrObject = () => {
     this.currObject = {
       name: '',
-      vertices: []
+      vertices: [],
+      faces: []
     }
   }
 
   parseStream = (fileStream) => {
+    console.log('parseStream()')
     return new Promise((resolve, reject) => {
       let outStream = new Writable({
         write(chunk, encoding, callback) {
@@ -106,11 +115,13 @@ class ObjParser {
       })
       outStream.typeRegex = this.typeRegex
       outStream.parseLine = this.parseLine
-      outStream.on('finish', (chunk, a, b) => {
+      outStream.on('finish', () => {
+        this.objects.push(this.currObject)
+        console.log('ObjParser.parseStream finished')
         console.log(this.objects)
         resolve(this.objects)
       })
-  
+
       fileStream.pipe(outStream)
     })
   }
@@ -127,6 +138,8 @@ class ObjParser {
         }
       })
       lineReader.on('close', () => {
+        // Add the last parsed object to array
+        this.objects.push(this.currObject)
         resolve(this.objects)
       })
     })
@@ -137,15 +150,18 @@ class ObjParser {
     switch (values[0]) {
       case 'g':
         // This is a group
-        // Store any parsed point groups
-        if (this.currObject.vertices.length > 0) {
-          this.currObject.name = values[1]
-          this.objects.push(this.currObject)
-        }
-        // Reset this.currObject array
-        this.currObject = {
-          name: '',
-          vertices: []
+        if (values[1].trim() === 'default') {
+          // This is the beginning of a group
+          // Store any parsed point groups
+          if (this.currObject.vertices.length > 0) {
+            this.currObject.name = values[1]
+            this.objects.push(this.currObject)
+          }
+          // Reset this.currObject
+          this.resetCurrObject()
+        } else {
+          // Set name
+          this.currObject.name = values[1].trim()
         }
         break
       case 'v': {
@@ -155,7 +171,22 @@ class ObjParser {
         // If this is first point, cmd should be `M` otherwise `L`
         let cmd = this.currObject.vertices.length === 0 ? 'M' : 'L'
         let point = new Point(cmd, ...values.map(value => parseFloat(value, 10)))
+        this.allVertices.push(point)
         this.currObject.vertices.push(point)
+      }
+        break
+      case 'f': {
+        // This is a face
+        // Remove first value (`f`)
+        values.shift()
+
+        let face = values.map(f => {
+          let vertexIndex = f.substring(0, f.indexOf('/'))
+          // Arrays are zero based but obj vertice index starts at 1
+          vertexIndex = parseInt(vertexIndex, 10) - 1
+          return this.allVertices[vertexIndex]
+        })
+        this.currObject.faces.push(face)
       }
     }
   }
@@ -177,6 +208,7 @@ class ObjParser {
         this.parseLine(line)
       }
     })
+    this.objects.push(this.currObject)
     return this.objects
   }
 }
