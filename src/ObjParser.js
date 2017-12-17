@@ -63,8 +63,7 @@ export class ObjFileListParser extends EventEmitter {
             'parseComplete',
             index,
             this.objects[index].fileName,
-            '100%',
-            // objParser.objects
+            '100%'
           )
         }
       }

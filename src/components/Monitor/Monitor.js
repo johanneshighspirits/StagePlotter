@@ -6,8 +6,8 @@ import Point from '../../Point'
 
 const Monitor = ({ gridTile, perspAngle }) => {
   let coords = utils.coordsFor(gridTile)
-  coords.x = coords.x + (TILE_WIDTH / 2)
-  coords.y = coords.y + (TILE_HEIGHT / 2)
+  // coords.x = coords.x + (TILE_WIDTH / 2)
+  // coords.y = coords.y + (TILE_HEIGHT / 2)
 
   let bottomSquare = [
     new Point('M', 0, 0, 0), 

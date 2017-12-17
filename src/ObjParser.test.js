@@ -136,7 +136,32 @@ function validateResultIsOfCorrectType(templateObject) {
   expect(templateObject.vertices[0]).toBeInstanceOf(Point)
 }
 
-describe('Obj File Parser', () => {
+// describe('ObjFileListParser', () => {
+
+//   function testUserUploadedFiles(files, nrOfObjects) {
+//     describe(`given ${files.length} files with ${nrOfObjects} of objects`, () => {
+//       it(`should return an array of ${nrOfObjects} objects`, async () => {
+//         expect.assertions(1)
+//         let objFileListParser = new ObjFileListParser(files)
+//         try {
+//           const result = await objFileListParser.start()
+//           expect(result).toHaveLength(1)
+//           done()
+//         } catch (err) {
+//           console.error(err)
+//         }
+//       })
+//     })
+//   }
+  
+//   describe('parsing uploaded files', () => {
+//     const file1 = new File(['123'], 'hej.obj')
+//     let files = [file1]
+//     testUserUploadedFiles(files, 4)
+//   })
+// })
+
+describe('ObjParser', () => {
   let objParser
   beforeEach(() => {
     objParser = new ObjParser()
